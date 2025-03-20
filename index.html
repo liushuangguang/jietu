@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>图片自动裁剪工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        background-color: #f7f7f7;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        min-height: 100vh;
+        padding: 0;
+        margin: 0;
+      }
+
+      .container {
+        max-width: 1000px;
+        margin: 0 auto;
+      }
+
+      .main-title {
+        font-size: 2.5rem;
+        font-weight: 900;
+        text-align: center;
+        letter-spacing: 1px;
+        margin-bottom: 0.5rem;
+      }
+
+      .subtitle {
+        font-size: 1rem;
+        color: #666;
+        text-align: center;
+        margin-bottom: 2.5rem;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      /* 图标样式 */
+      .app-icon {
+        width: 120px;
+        height: 100px;
+        margin: 0 auto 1.5rem;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .icon-camera {
+        width: 100%;
+        height: 100%;
+        position: relative;
+      }
+
+      /* 剪裁工具图标 */
+      .crop-icon {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+      }
+
+      .crop-icon svg {
+        width: 80px;
+        height: 80px;
+        filter: drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.1));
+      }
+
+      /* 上传区域样式 */
+      .upload-zone {
+        background-color: white;
+        border-radius: 12px;
+        margin: 0 auto;
+        padding: 2rem;
+        text-align: center;
+        border: 2px dashed #d1d5db;
+        transition: all 0.3s ease;
+        position: relative;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        max-width: 750px;
+        height: 300px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        margin-bottom: 2rem;
+      }
+
+      .upload-zone::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #f5e6d3;
+        border-radius: 10px;
+        z-index: -1;
+      }
+
+      .upload-zone::after {
+        content: "";
+        position: absolute;
+        top: -10px;
+        left: -10px;
+        right: -10px;
+        bottom: -10px;
+        background-color: #8b4513;
+        border-radius: 15px;
+        z-index: -2;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      }
+
+      .upload-zone:hover {
+        border-color: #3b82f6;
+      }
+
+      .select-btn {
+        background-color: #000;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        margin-top: 1rem;
+      }
+
+      .select-btn:hover {
+        background-color: #333;
+      }
+
+      /* 处理进度样式 */
+      .processing {
+        background-color: white;
+        border-radius: 12px;
+        margin: 2rem auto;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        max-width: 500px;
+      }
+
+      .progress-container {
+        height: 8px;
+        background-color: #e5e7eb;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .progress-bar {
+        height: 100%;
+        background: linear-gradient(to right, #007aff, #5856d6);
+        width: 0%;
+        transition: width 0.3s ease;
+      }
+
+      /* 结果区域样式 */
+      .results {
+        background-color: white;
+        border-radius: 12px;
+        margin: 0 auto;
+        padding: 2rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .action-btn {
+        background-color: #000;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .action-btn:hover {
+        background-color: #333;
+      }
+
+      .images-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+      }
+
+      .images-grid img {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: cover;
+        border-radius: 4px;
+        border: 10px solid white;
+        background-color: #f5e6d3;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transform: rotate(var(--rotation, 0deg));
+      }
+
+      /* 页脚样式 */
+      footer {
+        text-align: center;
+        padding: 1rem 0;
+        color: #6b7280;
+        font-size: 0.875rem;
+      }
+
+      footer a {
+        color: #6b7280;
+        text-decoration: none;
+      }
+
+      footer a:hover {
+        text-decoration: underline;
+      }
+
+      /* 隐藏元素 */
+      .hidden {
+        display: none;
+      }
+      /* 数据统计样式 */
+      .stats-container {
+        margin-top: 15px;
+        background-color: rgba(255, 255, 255, 0.8);
+        border-radius: 8px;
+        padding: 10px 15px;
+        display: inline-block;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        font-size: 0.9rem;
+        color: #4b5563;
+      }
+
+      .stats-item {
+        display: inline-block;
+        margin: 0 12px;
+      }
+
+      .stats-value {
+        font-weight: bold;
+        color: #2563eb;
+      }
+      .image-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .download-btn {
+        margin-top: 1em;
+      }
+      /* 模态框背景 */
+      .join-group-btn {
+        display: flex;
+        position: relative;
+        cursor: pointer;
+      }
+      .join-group-btn span {
+        width: 60px;
+        height: 40px;
+        background: #000;
+        border-radius: 4px;
+        margin-left: 24px;
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        color: #fff;
+      }
+      .modal {
+        display: none; /* 默认隐藏 */
+        position: absolute;
+        z-index: 1;
+        right: -170%;
+        bottom: 20px;
+        width: 200px;
+        height: 200px;
+        border-radius: 20px;
+      }
+
+      /* 模态框内容 */
+      .modal-content {
+        background-color: #fefefe;
+
+        box-shadow: 0px 4px 24px 0px rgba(0, 0, 0, 0.1);
+
+        width: 80%; /* 根据需要调整 */
+        max-width: 400px;
+      }
+
+      /* 关闭按钮样式 */
+      .modal-close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+      }
+      .modal-close:hover,
+      .modal-close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      /* 图片预览弹窗样式 */
+      .image-preview-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .image-preview-container {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        max-width: 90%;
+        position: relative;
+      }
+
+      .image-preview-header {
+        padding: 10px 15px;
+        background-color: #f5f5f5;
+        text-align: right;
+      }
+
+      .preview-close-btn {
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+        cursor: pointer;
+      }
+
+      .image-preview-content {
+        height: 640px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+      }
+
+      #preview-image {
+        height: 100%;
+        width: auto;
+        object-fit: contain;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- 新图标 -->
+      <div class="crop-icon">
+        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+          <!-- 相机主体 -->
+          <rect
+            x="30"
+            y="55"
+            width="140"
+            height="110"
+            rx="15"
+            fill="white"
+            stroke="#333"
+            stroke-width="3"
+          />
+
+          <!-- 镜头 -->
+          <circle
+            cx="100"
+            cy="105"
+            r="30"
+            fill="#333"
+            stroke="black"
+            stroke-width="2"
+          />
+          <circle
+            cx="100"
+            cy="105"
+            r="22"
+            fill="#111"
+            stroke="black"
+            stroke-width="1"
+          />
+          <circle cx="100" cy="105" r="12" fill="black" />
+          <circle cx="95" cy="100" r="3" fill="white" opacity="0.6" />
+
+          <!-- 快门按钮 -->
+          <circle
+            cx="155"
+            cy="75"
+            r="12"
+            fill="#ff3b30"
+            stroke="white"
+            stroke-width="2"
+          />
+
+          <!-- 取景器 -->
+          <rect x="75" y="45" width="50" height="10" rx="2" fill="#222" />
+
+          <!-- 顶部装饰 -->
+          <circle cx="55" cy="65" r="5" fill="#222" />
+          <rect
+            x="70"
+            y="63"
+            width="30"
+            height="10"
+            rx="2"
+            fill="white"
+            stroke="#ddd"
+            stroke-width="1"
+          />
+
+          <!-- 彩虹条 -->
+          <rect
+            x="40"
+            y="145"
+            width="120"
+            height="4"
+            rx="2"
+            fill="url(#rainbow)"
+          />
+          <text
+            x="70"
+            y="162"
+            font-family="Arial"
+            font-size="8"
+            font-weight="bold"
+          >
+            SMART CROPPER
+          </text>
+
+          <!-- 彩虹渐变定义 -->
+          <defs>
+            <linearGradient id="rainbow" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#ff3b30" />
+              <stop offset="20%" stop-color="#ff9500" />
+              <stop offset="40%" stop-color="#ffcc00" />
+              <stop offset="60%" stop-color="#34c759" />
+              <stop offset="80%" stop-color="#007aff" />
+              <stop offset="100%" stop-color="#5856d6" />
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+
+      <!-- 标题区域 -->
+      <h1 class="main-title">图片自动裁剪工具</h1>
+      <p class="subtitle">可以自动智能裁剪您的任何截图，只保留图片的主体部分</p>
+
+      <!-- 上传区域 - 保留原有id和class -->
+      <div id="upload-zone" class="upload-zone">
+        <input
+          type="file"
+          id="file-input"
+          multiple
+          accept="image/*"
+          class="hidden"
+        />
+        <div class="text-center">
+          <svg
+            class="w-16 h-16 mx-auto mb-4 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3 3m0 0l-3-3m3 3V8"
+            />
+          </svg>
+          <h3 class="mb-2 text-xl font-medium text-gray-900">拖放图片到这里</h3>
+          <p class="mb-4 text-sm text-gray-500">或者点击上传</p>
+          <button type="button" class="select-btn">批量上传图片</button>
+        </div>
+      </div>
+
+      <!-- 处理中区域 - 保留原有id和class -->
+      <div id="processing" class="processing hidden">
+        <div class="text-center">
+          <div class="progress-container">
+            <div id="progress-bar" class="progress-bar"></div>
+          </div>
+          <p id="progress-text" class="mt-2 text-sm text-gray-600">0%</p>
+        </div>
+      </div>
+
+      <!-- 结果区域 - 保留原有id和class -->
+      <div id="results" class="results hidden">
+        <div class="mb-4 flex justify-between items-center">
+          <h2 class="text-xl font-semibold text-gray-900">处理完成</h2>
+          <div class="space-x-2">
+            <button id="download-all" class="action-btn">下载全部</button>
+            <button id="process-more" class="action-btn">继续处理</button>
+          </div>
+        </div>
+        <div id="images-grid" class="images-grid"></div>
+      </div>
+    </div>
+
+    <footer>
+      <div
+        class="mt-2"
+        style="
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          justify-content: center;
+        "
+      >
+        创作者：刘先生 13080601097
+        <!-- 触发模态框的按钮 -->
+        <div class="join-group-btn" id="openModalBtn">
+          <span>加群</span>
+          <!-- 模态框结构 -->
+          <div id="qrModal" class="modal">
+            <div class="modal-content">
+              <img
+                src="qrcode.png"
+                alt="微信群二维码"
+                style="width: 100%; border-radius: 20px !important"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-container">
+        <div class="stats-item">
+          累计用户数: <span id="randomNumber" class="stats-value">0</span>
+        </div>
+        <div class="stats-item">
+          已处理图片:
+          <span id="processedImagesCount" class="stats-value">0</span>
+        </div>
+      </div>
+    </footer>
+
+    <!-- 图片预览弹窗 -->
+    <div id="image-preview-modal" class="image-preview-modal hidden">
+      <div class="image-preview-container">
+        <div class="image-preview-header">
+          <span class="preview-close-btn">&times;</span>
+        </div>
+        <div class="image-preview-content">
+          <img id="preview-image" src="" alt="图片预览">
+        </div>
+      </div>
+    </div>
+
+    <!-- 保留原有脚本 -->
+    <script src="app.js"></script>
+    <script>
+      document
+        .getElementById("openModalBtn")
+        .addEventListener("click", function (event) {
+          document.getElementById("qrModal").style.display = "block";
+          event.stopPropagation(); // 防止事件冒泡到文档级别
+        });
+
+      // 关闭模态框的函数
+      function closeModal() {
+        document.getElementById("qrModal").style.display = "none";
+      }
+
+      // 点击模态框外部关闭
+      window.addEventListener("click", function (event) {
+        console.log(event.target);
+
+        if (event.target != document.getElementById("qrModal")) {
+          closeModal();
+        }
+      });
+      //随机数
+      document.addEventListener("DOMContentLoaded", function () {
+        const randomNumberElement = document.getElementById("randomNumber");
+        const processedImagesCountElement = document.getElementById(
+          "processedImagesCount"
+        );
+
+        let userCount = localStorage.getItem("userCount") || 21048;
+        let processedImagesCount =
+          localStorage.getItem("processedImagesCount") || 54369;
+
+        randomNumberElement.textContent = userCount;
+        processedImagesCountElement.textContent = processedImagesCount;
+
+        setInterval(() => {
+          const randomIncrementUser = Math.floor(Math.random() * 11);
+          const randomIncrementImage = Math.floor(Math.random() * 11);
+
+          userCount = parseInt(userCount) + randomIncrementUser;
+          processedImagesCount =
+            parseInt(processedImagesCount) + randomIncrementImage;
+
+          randomNumberElement.textContent = userCount;
+          processedImagesCountElement.textContent = processedImagesCount;
+
+          localStorage.setItem("userCount", userCount);
+          localStorage.setItem("processedImagesCount", processedImagesCount);
+        }, 5000);
+      });
+      // 添加随机旋转效果给结果图片
+      document.addEventListener("DOMContentLoaded", function () {
+        const observer = new MutationObserver(function (mutations) {
+          mutations.forEach(function (mutation) {
+            if (
+              mutation.type === "childList" &&
+              mutation.addedNodes.length > 0
+            ) {
+              mutation.addedNodes.forEach(function (node) {
+                if (node.nodeName === "IMG") {
+                  const rotation = Math.random() * 6 - 3;
+                  node.style.setProperty("--rotation", `${rotation}deg`);
+                }
+              });
+            }
+          });
+        });
+
+        const imagesGrid = document.getElementById("images-grid");
+        if (imagesGrid) {
+          observer.observe(imagesGrid, { childList: true });
+        }
+      });
+    </script>
+  </body>
+</html>

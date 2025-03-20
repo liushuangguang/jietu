@@ -1,0 +1,36 @@
+.upload-zone {
+    @apply p-8 border-2 border-dashed border-gray-300 rounded-lg bg-white transition-all duration-200 cursor-pointer hover:border-gray-400;
+}
+
+.select-btn {
+    @apply px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200;
+}
+
+.action-btn {
+    @apply px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200;
+}
+
+.progress-container {
+    @apply w-full h-2 bg-gray-200 rounded-full overflow-hidden;
+}
+
+.progress-bar {
+    @apply h-full bg-blue-500 transition-all duration-200;
+    width: 0%;
+}
+
+.images-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 gap-4;
+}
+
+.image-card {
+    @apply relative bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200;
+}
+
+.image-card img {
+    @apply w-full h-auto;
+}
+
+.download-btn {
+    @apply absolute bottom-3 right-3 p-2 bg-white rounded-full shadow-lg text-gray-600 hover:text-blue-500 transition-colors duration-200;
+}
